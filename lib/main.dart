@@ -42,6 +42,18 @@ class _TodoListState extends State<TodoList> {
     });
     _textFieldController.clear();
   }
+  void _handleTodoChange(Todo todo) {
+    setState(() {
+      todo.completed = !todo.completed;
+    });
+  }
+
+  void _deleteTodo(Todo todo) {
+    setState(() {
+      _todos.removeWhere((element) => element.name == todo.name);
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +69,9 @@ class _TodoListState extends State<TodoList> {
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         children: _todos.map((Todo todo) {
           return TodoItem(
-            todo: todo,
-          );
+              todo: todo,
+              onTodoChanged: _handleTodoChange,
+              removeTodo: _deleteTodo);
         }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
@@ -67,51 +80,53 @@ class _TodoListState extends State<TodoList> {
         child: const Icon(Icons.add),
       ),// This trailing comma makes auto-formatting nicer for build methods.
     );
+
   }
+
+  Future<void> _displayDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add a todo'),
+          content: TextField(
+            controller: _textFieldController,
+            decoration: const InputDecoration(hintText: 'Type your todo'),
+            autofocus: true,
+          ),
+          actions: <Widget>[
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _addTodoItem(_textFieldController.text);
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }
 
-
-Future<void> _displayDialog() async {
-  return showDialog<void>(
-    context: context,
-    T: false,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Add a todo'),
-        content: TextField(
-          controller: _textFieldController,
-          decoration: const InputDecoration(hintText: 'Type your todo'),
-          autofocus: true,
-        ),
-        actions: <Widget>[
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              _addTodoItem(_textFieldController.text);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      );
-    },
-  );
-}
 
 
 class Todo {
@@ -121,9 +136,15 @@ class Todo {
 }
 
 class TodoItem extends StatelessWidget {
-  TodoItem({required this.todo}) : super(key: ObjectKey(todo));
+  TodoItem(
+      {required this.todo,
+        required this.onTodoChanged,
+        required this.removeTodo})
+      : super(key: ObjectKey(todo));
 
   final Todo todo;
+  final void Function(Todo todo) onTodoChanged;
+  final void Function(Todo todo) removeTodo;
 
   TextStyle? _getTextStyle(bool checked) {
     if (!checked) return null;
@@ -137,12 +158,16 @@ class TodoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      onTap: () {},
+      onTap: () {
+        onTodoChanged(todo);
+      },
       leading: Checkbox(
         checkColor: Colors.greenAccent,
         activeColor: Colors.red,
         value: todo.completed,
-        onChanged: (value) {},
+        onChanged: (value) {
+          onTodoChanged(todo);
+        },
       ),
       title: Row(children: <Widget>[
         Expanded(
@@ -155,9 +180,12 @@ class TodoItem extends StatelessWidget {
             color: Colors.red,
           ),
           alignment: Alignment.centerRight,
-          onPressed: () {},
+          onPressed: () {
+            removeTodo(todo);
+          },
         ),
       ]),
     );
+
   }
 }
