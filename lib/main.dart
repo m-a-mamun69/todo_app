@@ -4,6 +4,7 @@ void main() {
   runApp(const TodoApp());
 }
 
+
 class TodoApp extends StatelessWidget {
   const TodoApp({super.key});
 
@@ -11,36 +12,35 @@ class TodoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Todo Manager',
       theme: ThemeData(
 
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const TodoList(title: 'Flutter Demo Home Page'),
+      home: const TodoList(title: 'Todo Manager'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-
+class TodoList extends StatefulWidget {
+  const TodoList({super.key, required this.title});
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TodoList> createState() => _TodoListState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _TodoListState extends State<TodoList> {
+  final List<Todo> _todos = <Todo>[];
+  final TextEditingController _textFieldController = TextEditingController();
 
-  void _incrementCounter() {
+  void _addTodoItem(String name) {
     setState(() {
-
-      _counter++;
+      _todos.add(Todo(name: name, completed: false));
     });
+    _textFieldController.clear();
   }
 
   @override
@@ -53,27 +53,111 @@ class _MyHomePageState extends State<MyHomePage> {
 
         title: Text(widget.title),
       ),
-      body: Center(
-
-        child: Column(
-
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        children: _todos.map((Todo todo) {
+          return TodoItem(
+            todo: todo,
+          );
+        }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: () => _displayDialog(),
+        tooltip: 'Add a Todo',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),// This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+
+Future<void> _displayDialog() async {
+  return showDialog<void>(
+    context: context,
+    T: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Add a todo'),
+        content: TextField(
+          controller: _textFieldController,
+          decoration: const InputDecoration(hintText: 'Type your todo'),
+          autofocus: true,
+        ),
+        actions: <Widget>[
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _addTodoItem(_textFieldController.text);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+class Todo {
+  Todo({required this.name, required this.completed});
+  String name;
+  bool completed;
+}
+
+class TodoItem extends StatelessWidget {
+  TodoItem({required this.todo}) : super(key: ObjectKey(todo));
+
+  final Todo todo;
+
+  TextStyle? _getTextStyle(bool checked) {
+    if (!checked) return null;
+
+    return const TextStyle(
+      color: Colors.black54,
+      decoration: TextDecoration.lineThrough,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: () {},
+      leading: Checkbox(
+        checkColor: Colors.greenAccent,
+        activeColor: Colors.red,
+        value: todo.completed,
+        onChanged: (value) {},
+      ),
+      title: Row(children: <Widget>[
+        Expanded(
+          child: Text(todo.name, style: _getTextStyle(todo.completed)),
+        ),
+        IconButton(
+          iconSize: 30,
+          icon: const Icon(
+            Icons.delete,
+            color: Colors.red,
+          ),
+          alignment: Alignment.centerRight,
+          onPressed: () {},
+        ),
+      ]),
     );
   }
 }
